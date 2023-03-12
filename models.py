@@ -28,6 +28,7 @@ class NotificationForm(StatesGroup):
     time = State()
     attachments = State()
     is_periodic = State()
+    interval = State()
     is_finished = State()
 
 
@@ -36,3 +37,6 @@ class ChooseForm(StatesGroup):
     date = State()
     time = State()
     description = State()
+
+class ReturnForm(StatesGroup):
+    id = State()

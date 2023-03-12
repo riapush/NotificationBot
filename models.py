@@ -8,23 +8,31 @@ class Notification(Model):
     notification_id = AutoField()
     user_id = IntegerField(null=False)
     task = TextField(null=False)
+    description = TextField(null=True)
     date = DateField(null=False)
-    time = TimeField(default='10:00')
+    time = TimeField(null=False)
     attachments = CharField(null=True)
     is_periodic = BooleanField(default=False)
+    interval = IntegerField(null=True)
     is_finished = BooleanField(default=False)
     is_send = BooleanField(default=False)
 
     class Meta:
         database = db
 
+
 class NotificationForm(StatesGroup):
     task = State()
+    description = State()
     date = State()
     time = State()
     attachments = State()
     is_periodic = State()
     is_finished = State()
 
+
 class ChooseForm(StatesGroup):
     id = State()
+    date = State()
+    time = State()
+    description = State()

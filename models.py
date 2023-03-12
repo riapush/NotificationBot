@@ -11,7 +11,7 @@ class Notification(Model):
     description = TextField(null=True)
     date = DateField(null=False)
     time = TimeField(null=False)
-    attachments = CharField(null=True)
+    attachments = BooleanField(default=False)
     is_periodic = BooleanField(default=False)
     interval = IntegerField(null=True)
     is_finished = BooleanField(default=False)
@@ -30,6 +30,7 @@ class NotificationForm(StatesGroup):
     is_periodic = State()
     interval = State()
     is_finished = State()
+    notification_id = State()
 
 
 class ChooseForm(StatesGroup):
@@ -37,6 +38,3 @@ class ChooseForm(StatesGroup):
     date = State()
     time = State()
     description = State()
-
-class ReturnForm(StatesGroup):
-    id = State()

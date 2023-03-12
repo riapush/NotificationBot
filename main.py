@@ -1,12 +1,13 @@
+import os
 from datetime import date, datetime, timedelta
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, ContentTypes
 import logging
 import asyncio
 import aioschedule
-from models import Notification, NotificationForm, ChooseForm, ReturnForm
+from models import Notification, NotificationForm, ChooseForm
 from aiogram_calendar import simple_cal_callback, SimpleCalendar
 from aiogram_timepicker.panel import FullTimePicker, full_timep_callback
 
@@ -158,9 +159,8 @@ async def add_interval(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(state=NotificationForm.attachments, text="no_attach")
-async def process_attachments(callback: types.CallbackQuery, state: FSMContext):
+async def process_no_attachments(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    print(data)
     try:
         Notification.create(user_id=callback.message.chat.id, task=data['task'], description=data['description'],
                             date=data['date'], time=data['time'], is_periodic=data['is_periodic'],
@@ -174,7 +174,32 @@ async def process_attachments(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(state=NotificationForm.attachments, text="attach")
 async def process_attachments(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("Отправь вложение следующим сообщением")
+    await callback.message.answer("Отправь вложение следующим сообщением. Отправлять необходимо по одному.")
+
+
+@dp.message_handler(content_types=ContentTypes.ANY, state=NotificationForm.attachments)
+async def unknown_message(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    if message.text == "/done":
+        await state.finish()
+        await message.answer("Напоминание добавлено")
+    if 'notification_id' not in data:
+        try:
+            instance = Notification.create(user_id=message.chat.id, task=data['task'], description=data['description'],
+                                date=data['date'], time=data['time'], is_periodic=data['is_periodic'],
+                                interval=data['interval'], is_finished=False)
+            await state.update_data(notification_id=instance.notification_id)
+        except KeyError:
+            instance = Notification.create(user_id=message.chat.id, task=data['task'], date=data['date'], time=data['time'],
+                                is_periodic=data['is_periodic'], interval=data['interval'], is_finished=False)
+            await state.update_data(notification_id=instance.notification_id)
+    else:
+        instance = Notification.get_by_id(data['notification_id'])
+    if (document := message.document) and instance:
+        if not os.path.isdir(f"attachments/{instance.notification_id}"):
+            os.makedirs(f"attachments/{instance.notification_id}")
+        await document.download(destination_file=f'attachments/{instance.notification_id}/{document.file_name}')
+        await message.answer("Вложение сохранено. Ты можешь отправить еще одно. Если же ты всё, подружка, введи /done")
 
 
 @dp.callback_query_handler(text="check_tasks")

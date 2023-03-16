@@ -11,7 +11,7 @@ from models import Notification, NotificationForm, ChooseForm
 from aiogram_calendar import simple_cal_callback, SimpleCalendar
 from aiogram_timepicker.panel import FullTimePicker, full_timep_callback
 
-API_TOKEN = '5714223753:AAHVAo2WiT3-1M7JzYfCr_d5uHfk6EpsZSA'
+API_TOKEN = ''
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
 bot = Bot(token=API_TOKEN)
@@ -34,20 +34,26 @@ async def check_notification_time():
     to_notify = Notification.select().where((Notification.date == date.today()) & (Notification.time < datetime.now().strftime("%H:%M:%S")) &
                                 (Notification.is_finished == False) & (Notification.is_send == False))
     for task in to_notify:
-        print(task)
         msg = f'Привет! Ты просила - я напоминаю\n\n' \
               f'id: {task.notification_id}\n' \
               f'Задание: {task.task}\n' \
               f'{"Описание: " + str(task.description) if task.description else ""}\n' \
               f'Дата напоминания: {task.date}\n' \
               f'Регулярное ли задание: {"Да" if task.is_periodic == True else "Нет"}\n\n'
-        if task.is_periodic:
+
+        if task.is_periodic and not task.is_edited:
             Notification.create(user_id=task.user_id, task=task.task, description=task.description,
                                 date=task.date + timedelta(days=task.interval), time=task.time,
                                 is_periodic=task.is_periodic, is_finished=False)
         task.is_send = True
         task.save()
         await bot.send_message(task.user_id, msg)
+        if task.attachments:
+            directory = f"attachments/{task.notification_id}"
+            for filename in os.scandir(directory):
+                if filename.is_file():
+                    f = open(filename.path, "rb")
+                    await bot.send_document(task.user_id, f)
 
 
 @dp.message_handler(commands=['start'])
@@ -161,13 +167,13 @@ async def add_interval(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(state=NotificationForm.attachments, text="no_attach")
 async def process_no_attachments(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    try:
-        Notification.create(user_id=callback.message.chat.id, task=data['task'], description=data['description'],
-                            date=data['date'], time=data['time'], is_periodic=data['is_periodic'],
-                            interval=data['interval'], is_finished=False)
-    except KeyError:
-        Notification.create(user_id=callback.message.chat.id, task=data['task'], date=data['date'], time=data['time'],
-                            is_periodic=data['is_periodic'], interval=data['interval'], is_finished=False)
+    if 'description' not in data:
+        data['description'] = None
+    if 'interval' not in data:
+        data['interval'] = None
+    instance = Notification.create(user_id=callback.message.chat.id, task=data['task'], description=data['description'],
+                                   date=data['date'], time=data['time'], is_periodic=data['is_periodic'],
+                                   interval=data['interval'], is_finished=False)
     await state.finish()
     await callback.message.answer("Напоминание успешно установлено")
 
@@ -178,21 +184,20 @@ async def process_attachments(callback: types.CallbackQuery, state: FSMContext):
 
 
 @dp.message_handler(content_types=ContentTypes.ANY, state=NotificationForm.attachments)
-async def unknown_message(message: types.Message, state: FSMContext):
+async def process_file(message: types.Message, state: FSMContext):
     data = await state.get_data()
     if message.text == "/done":
         await state.finish()
         await message.answer("Напоминание добавлено")
     if 'notification_id' not in data:
-        try:
-            instance = Notification.create(user_id=message.chat.id, task=data['task'], description=data['description'],
-                                date=data['date'], time=data['time'], is_periodic=data['is_periodic'],
-                                interval=data['interval'], is_finished=False)
-            await state.update_data(notification_id=instance.notification_id)
-        except KeyError:
-            instance = Notification.create(user_id=message.chat.id, task=data['task'], date=data['date'], time=data['time'],
-                                is_periodic=data['is_periodic'], interval=data['interval'], is_finished=False)
-            await state.update_data(notification_id=instance.notification_id)
+        if 'description' not in data:
+            data['description'] = None
+        if 'interval' not in data:
+            data['interval'] = None
+        instance = Notification.create(user_id=message.chat.id, task=data['task'], description=data['description'],
+                            date=data['date'], time=data['time'], is_periodic=data['is_periodic'],
+                            interval=data['interval'], attachments=True, is_finished=False)
+        await state.update_data(notification_id=instance.notification_id)
     else:
         instance = Notification.get_by_id(data['notification_id'])
     if (document := message.document) and instance:
@@ -272,11 +277,32 @@ async def finish_notification(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(text="edit_notification", state=ChooseForm)
 async def edit_notification(callback: types.CallbackQuery, state: FSMContext):
+    if Notification.get_by_id((await state.get_data())['id']).is_periodic:
+        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        kb.add("Текущее", "Целиком")
+        await state.set_state(ChooseForm.current)
+        await callback.message.answer(f"Меняем текущее дело или изменяем регулярное целиком?", reply_markup=kb)
+    else:
+        kb = types.InlineKeyboardMarkup(resize_keyboard=True)
+        kb.add(types.InlineKeyboardButton(text="Редактировать дату", callback_data="edit_date"))
+        kb.add(types.InlineKeyboardButton(text="Редактировать время", callback_data="edit_time"))
+        kb.add(types.InlineKeyboardButton(text="Редактировать описание", callback_data="edit_task"))
+        await callback.message.answer(f"Что будем редактировать? ", reply_markup=kb)
+
+
+@dp.message_handler(state=ChooseForm.current)
+async def current_or_not(message: types.Message, state: FSMContext):
     kb = types.InlineKeyboardMarkup(resize_keyboard=True)
+    if message.text == 'Целиком':
+        await state.update_data(current=False)
+    else:
+        await state.update_data(current=True)
     kb.add(types.InlineKeyboardButton(text="Редактировать дату", callback_data="edit_date"))
     kb.add(types.InlineKeyboardButton(text="Редактировать время", callback_data="edit_time"))
     kb.add(types.InlineKeyboardButton(text="Редактировать описание", callback_data="edit_task"))
-    await callback.message.answer(f"Что будем редактировать? ", reply_markup=kb)
+    await message.answer(f"Что будем редактировать? ", reply_markup=kb)
+
+
 
 
 @dp.callback_query_handler(text="edit_task", state=ChooseForm)
@@ -290,7 +316,12 @@ async def edit_description(message: types.Message, state: FSMContext):
     await state.update_data(description=message.text)
     data = await state.get_data()
     instance = Notification.get_by_id(data['id'])
+    if data['current']:
+        Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
+                            date=instance.date + timedelta(days=instance.interval), time=instance.time,
+                            is_periodic=instance.is_periodic, is_finished=False)
     instance.description = data['description']
+    instance.is_edited = True
     instance.save()
     await state.finish()
     await message.answer(f'Описание изменено.', reply_markup=None)
@@ -312,7 +343,12 @@ async def edit_date(callback_query: CallbackQuery, callback_data: dict, state: F
         data = await state.get_data()
         print(data)
         instance = Notification.get_by_id(data['id'])
+        if data['current']:
+            Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
+                                date=instance.date + timedelta(days=instance.interval), time=instance.time,
+                                is_periodic=instance.is_periodic, is_finished=False)
         instance.date = data['date']
+        instance.is_edited = True
         instance.save()
         await state.finish()
 
@@ -333,7 +369,12 @@ async def edit_time(callback_query: CallbackQuery, callback_data: dict, state: F
         data = await state.get_data()
         print(data)
         instance = Notification.get_by_id(data['id'])
+        if data['current']:
+            Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
+                                date=instance.date + timedelta(days=instance.interval), time=instance.time,
+                                is_periodic=instance.is_periodic, is_finished=False)
         instance.time = data['time']
+        instance.is_edited = True
         instance.save()
         await state.finish()
 
@@ -341,8 +382,7 @@ async def edit_time(callback_query: CallbackQuery, callback_data: dict, state: F
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
     await message.answer("Смотри, что я могу:\n"
-                         "Я умею создавать задачу по кнопке 'Напоминание добавлямус!' и уведомлять о делах в нужное время\n"
-                         "")
+                         "Я умею создавать задачу по кнопке 'Напоминание добавлямус!' и уведомлять о делах в нужное время\n")
 
 
 @dp.message_handler()

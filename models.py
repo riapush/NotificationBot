@@ -13,6 +13,7 @@ class Notification(Model):
     time = TimeField(null=False)
     attachments = BooleanField(default=False)
     is_periodic = BooleanField(default=False)
+    is_edited = BooleanField(default=False)
     interval = IntegerField(null=True)
     is_finished = BooleanField(default=False)
     is_send = BooleanField(default=False)
@@ -38,3 +39,4 @@ class ChooseForm(StatesGroup):
     date = State()
     time = State()
     description = State()
+    current = State()

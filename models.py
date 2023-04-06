@@ -40,3 +40,4 @@ class ChooseForm(StatesGroup):
     time = State()
     description = State()
     current = State()
+    attachments = State()

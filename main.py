@@ -11,7 +11,7 @@ from models import Notification, NotificationForm, ChooseForm
 from aiogram_calendar import simple_cal_callback, SimpleCalendar
 from aiogram_timepicker.panel import FullTimePicker, full_timep_callback
 
-API_TOKEN = ''
+API_TOKEN = '5714223753:AAHVAo2WiT3-1M7JzYfCr_d5uHfk6EpsZSA'
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
 bot = Bot(token=API_TOKEN)
@@ -188,7 +188,7 @@ async def process_file(message: types.Message, state: FSMContext):
     data = await state.get_data()
     if message.text == "/done":
         await state.finish()
-        await message.answer("Напоминание добавлено")
+        await message.answer("Напоминание добавлено. Чтобы вернуться в главное меню, введи команду /start")
     if 'notification_id' not in data:
         if 'description' not in data:
             data['description'] = None
@@ -262,7 +262,7 @@ async def delete_notification(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     Notification.delete_by_id(data['id'])
     await state.finish()
-    await callback.message.answer(f"Напоминание с id={data['id']} удалено.")
+    await callback.message.answer(f"Напоминание с id={data['id']} удалено. Чтобы вернуться в главное меню, введи команду /start")
 
 
 @dp.callback_query_handler(text="finish_notification", state=ChooseForm)
@@ -272,7 +272,7 @@ async def finish_notification(callback: types.CallbackQuery, state: FSMContext):
     instance.is_finished = True
     instance.save()
     await state.finish()
-    await callback.message.answer(f"Напоминание с id={data['id']} отмечено выполненным.")
+    await callback.message.answer(f"Напоминание с id={data['id']} отмечено выполненным. Чтобы вернуться в главное меню, введи команду /start")
 
 
 @dp.callback_query_handler(text="edit_notification", state=ChooseForm)
@@ -287,6 +287,7 @@ async def edit_notification(callback: types.CallbackQuery, state: FSMContext):
         kb.add(types.InlineKeyboardButton(text="Редактировать дату", callback_data="edit_date"))
         kb.add(types.InlineKeyboardButton(text="Редактировать время", callback_data="edit_time"))
         kb.add(types.InlineKeyboardButton(text="Редактировать описание", callback_data="edit_task"))
+        kb.add(types.InlineKeyboardButton(text="Заменить файлы", callback_data="new_files"))
         await callback.message.answer(f"Что будем редактировать? ", reply_markup=kb)
 
 
@@ -300,8 +301,35 @@ async def current_or_not(message: types.Message, state: FSMContext):
     kb.add(types.InlineKeyboardButton(text="Редактировать дату", callback_data="edit_date"))
     kb.add(types.InlineKeyboardButton(text="Редактировать время", callback_data="edit_time"))
     kb.add(types.InlineKeyboardButton(text="Редактировать описание", callback_data="edit_task"))
+    kb.add(types.InlineKeyboardButton(text="Заменить файлы", callback_data="new_files"))
     await message.answer(f"Что будем редактировать? ", reply_markup=kb)
 
+
+@dp.callback_query_handler(text="new_files", state=ChooseForm)
+async def new_files(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    instance = Notification.get_by_id(data['id'])
+    if not os.path.isdir(f"attachments/{instance.notification_id}"):
+        os.makedirs(f"attachments/{instance.notification_id}")
+    else:
+        for f in os.listdir(f"attachments/{instance.notification_id}"):
+            os.remove(os.path.join(f"attachments/{instance.notification_id}", f))
+    await ChooseForm.attachments.set()
+    await callback.message.answer("Отправь вложение следующим сообщением. Отправлять необходимо по одному.")
+
+
+@dp.message_handler(content_types=ContentTypes.ANY, state=ChooseForm.attachments)
+async def process_file(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    if message.text == "/done":
+        await state.finish()
+        await message.answer("Файлы изменены. Чтобы вернуться в главное меню, введи команду /start")
+    instance = Notification.get_by_id(data['id'])
+    if (document := message.document) and instance:
+        if not os.path.isdir(f"attachments/{instance.notification_id}"):
+            os.makedirs(f"attachments/{instance.notification_id}")
+        await document.download(destination_file=f'attachments/{instance.notification_id}/{document.file_name}')
+        await message.answer("Вложение сохранено. Ты можешь отправить еще одно. Если же ты всё, подружка, введи /done")
 
 
 
@@ -316,15 +344,18 @@ async def edit_description(message: types.Message, state: FSMContext):
     await state.update_data(description=message.text)
     data = await state.get_data()
     instance = Notification.get_by_id(data['id'])
-    if data['current']:
-        Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
+    try:
+        if data['current']:
+            Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
                             date=instance.date + timedelta(days=instance.interval), time=instance.time,
                             is_periodic=instance.is_periodic, is_finished=False)
+    except:
+        pass
     instance.description = data['description']
     instance.is_edited = True
     instance.save()
     await state.finish()
-    await message.answer(f'Описание изменено.', reply_markup=None)
+    await message.answer(f'Описание изменено. Чтобы вернуться в главное меню, введи команду /start', reply_markup=None)
 
 
 
@@ -338,15 +369,18 @@ async def edit_date_input(callback: types.CallbackQuery, state: FSMContext):
 async def edit_date(callback_query: CallbackQuery, callback_data: dict, state: FSMContext):
     selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
     if selected:
-        await callback_query.message.answer(f'Ты выбрала {date.strftime("%d/%m/%Y")}. Дата изменена.', reply_markup=None)
+        await callback_query.message.answer(f'Ты выбрала {date.strftime("%d/%m/%Y")}. Дата изменена. Чтобы вернуться в главное меню, введи команду /start', reply_markup=None)
         await state.update_data(date=date)
         data = await state.get_data()
         print(data)
         instance = Notification.get_by_id(data['id'])
-        if data['current']:
-            Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
+        try:
+            if data['current']:
+                Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
                                 date=instance.date + timedelta(days=instance.interval), time=instance.time,
                                 is_periodic=instance.is_periodic, is_finished=False)
+        except:
+            pass
         instance.date = data['date']
         instance.is_edited = True
         instance.save()
@@ -364,15 +398,18 @@ async def edit_time(callback_query: CallbackQuery, callback_data: dict, state: F
     r = await FullTimePicker().process_selection(callback_query, callback_data)
     if r.selected:
         await callback_query.message.answer(
-            f'Ты выбрала {r.time.strftime("%H:%M:%S")}. Время изменено.', reply_markup=None)
+            f'Ты выбрала {r.time.strftime("%H:%M:%S")}. Время изменено. Чтобы вернуться в главное меню, введи команду /start', reply_markup=None)
         await state.update_data(time=r.time)
         data = await state.get_data()
         print(data)
         instance = Notification.get_by_id(data['id'])
-        if data['current']:
-            Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
+        try:
+            if data['current']:
+                Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
                                 date=instance.date + timedelta(days=instance.interval), time=instance.time,
                                 is_periodic=instance.is_periodic, is_finished=False)
+        except:
+            pass
         instance.time = data['time']
         instance.is_edited = True
         instance.save()
@@ -382,7 +419,8 @@ async def edit_time(callback_query: CallbackQuery, callback_data: dict, state: F
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
     await message.answer("Смотри, что я могу:\n"
-                         "Я умею создавать задачу по кнопке 'Напоминание добавлямус!' и уведомлять о делах в нужное время\n")
+                         "Я умею создавать задачу по кнопке 'Напоминание добавлямус!' и уведомлять о делах в нужное время\n"
+                         "Чтобы вернуться в главное меню, введи команду /start")
 
 
 @dp.message_handler()

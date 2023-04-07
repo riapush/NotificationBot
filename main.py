@@ -309,6 +309,14 @@ async def current_or_not(message: types.Message, state: FSMContext):
 async def new_files(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     instance = Notification.get_by_id(data['id'])
+    try:
+        if data['current']:
+            new_instance = Notification.create(user_id=instance.user_id, task=instance.task, description=instance.description,
+                            date=instance.date + timedelta(days=instance.interval), time=instance.time,
+                            is_periodic=instance.is_periodic, is_finished=False)
+            os.rename(f"attachments/{instance.notification_id}", f"attachments/{new_instance.notification_id}")
+    except:
+        pass
     if not os.path.isdir(f"attachments/{instance.notification_id}"):
         os.makedirs(f"attachments/{instance.notification_id}")
     else:

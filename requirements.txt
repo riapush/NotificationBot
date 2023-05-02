@@ -1,0 +1,5 @@
+aiogram==2.25.1
+aiogram-calendar==0.1.1
+aiogram-timepicker==0.2.0
+aioschedule==0.5.2
+peewee==3.16.0

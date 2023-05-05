@@ -19,7 +19,7 @@ pipeline {
 		echo 'successfully download'
             }
         }
-        sstage('Getting env variables') {
+        stage('Getting env variables') {
             steps {
                 withCredentials([file(credentialsId: 'ENV', variable: 'ENV')]) {
                     script {

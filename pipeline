@@ -2,6 +2,35 @@ pipeline {
     agent any
 
     stages {
+	stage('Stop ') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh 'docker stop jenk_bot || true'
+                    } else {
+                        bat 'docker stop jenk_bot || true'
+                    }
+                }
+            }
+        }
+	stage('Download git repository') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh 'rm -rf NotificationBot'
+                        sh 'git clone --depth=1 https://github.com/riapush/NotificationBot.git'
+                        sh 'rm -rf NotificationBot/.git*'
+                        sh 'ls'
+                    } else {
+                        bat 'rm -rf NotificationBot'
+                        bat 'git clone --depth=1 https://github.com/riapush/NotificationBot.git'
+                        bat 'rm -rf NotificationBot/.git*'
+                        bat 'ls'
+                    }
+                }
+		echo 'successfully download'
+            }
+        }
         stage('Hello') {
             steps {
                 echo 'Hello World'

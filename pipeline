@@ -19,9 +19,21 @@ pipeline {
 		echo 'successfully download'
             }
         }
-        stage('Hello') {
+        sstage('Getting env variables') {
             steps {
-                echo 'Hello World'
+                withCredentials([file(credentialsId: 'ENV', variable: 'ENV')]) {
+                    script {
+                        if (isUnix()) {
+                            sh 'cp $ENV ./.env'
+                            sh 'mkdir -p ./storage/temp'
+                            sh 'mkdir -p ./storage/backup'
+                        } else {
+                            bat 'powershell Copy-Item %ENV% -Destination ./.env'
+                            bat 'If Not Exist storage\\temp mkdir storage\\temp'
+                            bat 'If Not Exist storage\\backup mkdir storage\\backup'
+                        }
+                    }
+                }
             }
         }
     }

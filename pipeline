@@ -11,7 +11,7 @@ pipeline {
                         sh 'rm -rf api_lab2/.git*'
                         sh 'ls'
                     } else {
-                        bat 'powershell Remove-Item api_lab2 -Recurse -Force'
+                        bat 'powershell Remove-Item -Recurse -Force'
                         bat 'git clone --depth=1 https://github.com/riapush/NotificationBot.git'
                         bat 'powershell Remove-Item api_lab2/.git* -Recurse -Force'
                         bat 'ls'

@@ -11,7 +11,7 @@ pipeline {
                         sh 'rm -rf api_lab2/.git*'
                         sh 'ls'
                     } else {
-                        bat 'rm -rf api_lab2'
+                        bat 'rm api_lab2 -r -fo'
                         bat 'git clone --depth=1 https://github.com/riapush/NotificationBot.git'
                         bat 'rm -rf api_lab2/.git*'
                         bat 'ls'

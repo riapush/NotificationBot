@@ -6,14 +6,14 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'rm -rf NotificationBot'
+                        sh 'rm -rf api_lab2'
                         sh 'git clone --depth=1 https://github.com/riapush/NotificationBot.git'
-                        sh 'rm -rf NotificationBot/.git*'
+                        sh 'rm -rf api_lab2/.git*'
                         sh 'ls'
                     } else {
-                        bat 'rm -rf NotificationBot'
+                        bat 'rm -rf api_lab2'
                         bat 'git clone --depth=1 https://github.com/riapush/NotificationBot.git'
-                        bat 'rm -rf NotificationBot/.git*'
+                        bat 'rm -rf api_lab2/.git*'
                         bat 'ls'
                     }
                 }

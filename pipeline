@@ -2,17 +2,6 @@ pipeline {
     agent any
 
     stages {
-	stage('Stop ') {
-            steps {
-                script {
-                    if (isUnix()) {
-                        sh 'docker stop jenk_bot || true'
-                    } else {
-                        bat 'docker stop jenk_bot || true'
-                    }
-                }
-            }
-        }
 	stage('Download git repository') {
             steps {
                 script {

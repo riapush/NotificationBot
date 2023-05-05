@@ -14,7 +14,6 @@ pipeline {
                         bat 'powershell Remove-Item NotificationBot -Recurse -Force'
                         bat 'git clone --depth=1 https://github.com/riapush/NotificationBot.git NotificationBot'
                         bat 'powershell Remove-Item NotificationBot/.git* -Recurse -Force'
-                        bat 'ls'
                     }
                 }
 		echo 'successfully download'

@@ -3,3 +3,5 @@ aiogram-calendar==0.1.1
 aiogram-timepicker==0.2.0
 aioschedule==0.5.2
 peewee==3.16.0
+
+python-dotenv~=1.0.0

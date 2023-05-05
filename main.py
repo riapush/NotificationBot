@@ -10,8 +10,12 @@ import aioschedule
 from models import Notification, NotificationForm, ChooseForm
 from aiogram_calendar import simple_cal_callback, SimpleCalendar
 from aiogram_timepicker.panel import FullTimePicker, full_timep_callback
+import os
+from dotenv import load_dotenv, find_dotenv
 
-API_TOKEN = '5714223753:AAHVAo2WiT3-1M7JzYfCr_d5uHfk6EpsZSA'
+load_dotenv(find_dotenv())
+
+API_TOKEN = os.environ.get("BOT_TOKEN")
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
 bot = Bot(token=API_TOKEN)

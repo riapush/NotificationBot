@@ -49,7 +49,7 @@ pipeline {
                 }
 		echo '===============got variables succesfully==================='
             }
-        }}
+        }
 	stage("Making back-up") {
             steps {
                 echo " ==============creating back-up=================="
@@ -71,8 +71,8 @@ pipeline {
 			bat "docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz"
 			bat "docker exec jenk_bot bash -c 'rm backup.tar.gz'"
                     }
-		echo " ==============back-up created succesfully=================="
 		}
+		echo " ==============back-up created succesfully=================="
             }
         }
 }

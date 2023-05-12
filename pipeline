@@ -2,6 +2,17 @@ pipeline {
     agent any
 
     stages {
+	stage('Stop old container') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh 'docker stop jenk_bot || true'
+                    } else {
+                        bat 'docker stop jenk_bot || true'
+                    }
+                }
+            }
+        }
 	stage('Download git repository') {
             steps {
                 script {
@@ -35,6 +46,21 @@ pipeline {
                     }
                 }
             }
+        }
+	post {
+        success {
+                script {
+                    if (isUnix()) {
+                        sh 'docker build -t NotificationBot .'
+                        sh 'docker run --name jenk_bot -d --rm NotificationBot'
+                        \\ sh 'docker exec -d jenk_bot bash -c "python backup.py"'
+                    } else {
+                        bat 'docker build -t NotificationBot .'
+                        bat 'docker run --name jenk_bot -d --rm NotificationBot'
+                        bat 'If Not Exist storage/dump.sql powershell New-Item storage/dump.sql'
+                        \\ bat 'docker exec -d jenk_bot bash -c "python backup.py"'
+                    }
+                }
         }
     }
 }

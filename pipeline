@@ -4,6 +4,7 @@ pipeline {
     stages {
 	stage('Stop old container') {
             steps {
+		echo '===============stopping old container==================='
                 script {
                     if (isUnix()) {
                         sh 'docker stop jenk_bot || true'
@@ -11,11 +12,13 @@ pipeline {
                         bat 'docker stop jenk_bot || true'
                     }
                 }
+		echo '===============old container successfully stopped==================='
             }
         }
 	stage('Download git repository') {
             steps {
                 script {
+		echo '===============downloading git repo==================='
                     if (isUnix()) {
                         sh 'rm -rf api_lab2'
                         sh 'git clone --depth=1 https://github.com/riapush/NotificationBot.git'
@@ -27,11 +30,12 @@ pipeline {
                         bat 'powershell Remove-Item NotificationBot/.git* -Recurse -Force'
                     }
                 }
-		echo 'successfully download'
+		echo '===============git repo downloaded==================='
             }
         }
         stage('Getting env variables') {
             steps {
+		echo '===============getting env variables==================='
                 withCredentials([file(credentialsId: 'ENV', variable: 'ENV')]) {
                     script {
                         if (isUnix()) {
@@ -45,11 +49,13 @@ pipeline {
                         }
                     }
                 }
+		echo '===============got variables succesfully==================='
             }
         }
 	post {
         success {
                 script {
+		echo '===============run docker==================='
                     if (isUnix()) {
                         sh 'docker build -t NotificationBot .'
                         sh 'docker run --name jenk_bot -d --rm NotificationBot'
@@ -58,7 +64,9 @@ pipeline {
                         bat 'docker run --name jenk_bot -d --rm NotificationBot'
                         bat 'If Not Exist storage/dump.sql powershell New-Item storage/dump.sql'
                     }
+		echo '===============docker container is running successfully==================='
                 }
         }
     }
+}
 }

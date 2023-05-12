@@ -15,7 +15,7 @@ pipeline {
 			sh "docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz"
 			sh "docker exec jenk_bot sh -c 'rm backup.tar.gz'"
                     } else {
-			bat "docker exec jenk_bot bash -c 'sqlite3 ./notifications.db .dump > dump.sql'"
+			bat "docker exec jenk_bot bash -c \"sqlite3 ./notifications.db .dump > dump.sql\""
 			bat "docker exec jenk_bot bash -c 'tar -cvf backup.tar ./attachments'"
                 	bat "docker exec jenk_bot bash -c 'tar -rvf backup.tar dump.sql'"
 			bat "docker exec jenk_bot bash -c 'gzip backup.tar'"

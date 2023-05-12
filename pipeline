@@ -9,7 +9,7 @@ pipeline {
                     if (isUnix()) {
                         sh 'docker stop jenk_bot || true'
                     } else {
-                        bat 'docker stop jenk_bot || true'
+                        bat 'docker stop jenk_bot || echo off'
                     }
                 }
 		echo '===============old container successfully stopped==================='

@@ -49,7 +49,7 @@ pipeline {
                 }
 		echo '===============got variables succesfully==================='
             }
-        }
+        }}
 	stage("Making back-up") {
             steps {
                 echo " ==============creating back-up=================="

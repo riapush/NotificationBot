@@ -55,12 +55,19 @@ pipeline {
                 echo " ==============creating back-up=================="
                 sh '''
                 docker exec jenk_bot sh -c 'sqlite3 ./notifications.db .dump > dump.sql'
+echo " ==============dump.sql made=================="
                 docker exec jenk_bot sh -c 'tar -cvf backup.tar ./attachments'
+echo " ==============attachments archived=================="
                 docker exec jenk_bot sh -c 'tar -rvf backup.tar dump.sql'
+echo " ==============added dump.sql to archive=================="
                 docker exec jenk_bot sh -c 'gzip backup.tar'
+echo " ==============gzip archived=================="
                 docker exec jenk_bot sh -c 'rm dump.sql'
+echo " ==============dump.sql deleted=================="
                 docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz
+echo " ==============copied archive to the storage=================="
                 docker exec bot sh -c 'rm backup.tar.gz'
+echo " ==============rm backup from container=================="
                 '''
 		echo " ==============back-up created succesfully=================="
             }

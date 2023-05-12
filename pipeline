@@ -57,11 +57,11 @@ pipeline {
 		echo '===============run docker==================='
                 script {
                     if (isUnix()) {
-                        sh 'docker build -t NotificationBot .'
-                        sh 'docker run --name jenk_bot -d --rm NotificationBot'
+                        sh 'docker build -t notificationbot .'
+                        sh 'docker run --name jenk_bot -d --rm notificationbot'
                     } else {
-                        bat 'docker build -t NotificationBot .'
-                        bat 'docker run --name jenk_bot -d --rm NotificationBot'
+                        bat 'docker build -t notificationbot .'
+                        bat 'docker run --name jenk_bot -d --rm notificationbot'
                         bat 'If Not Exist storage/dump.sql powershell New-Item storage/dump.sql'
                     }
                 }

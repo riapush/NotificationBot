@@ -1,6 +1,5 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from peewee import *
-
 db = SqliteDatabase('notifications.db')
 
 

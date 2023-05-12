@@ -40,18 +40,32 @@ pipeline {
                     script {
                         if (isUnix()) {
                             sh 'cp $ENV ./.env'
-                            sh 'mkdir -p ./storage/temp'
                             sh 'mkdir -p ./storage/backup'
                         } else {
                             bat 'powershell Copy-Item %ENV% -Destination ./.env'
-                            bat 'If Not Exist storage\\temp mkdir storage\\temp'
                             bat 'If Not Exist storage\\backup mkdir storage\\backup'
                         }
                     }
                 }
 		echo '===============got variables succesfully==================='
             }
-        }}
+        }
+stage("back-up") {
+            steps {
+                echo " ==============creating back-up=================="
+                sh '''
+                docker exec jenk_bot sh -c 'sqlite3 ./notifications.db .dump > dump.sql'
+                docker exec jenk_bot sh -c 'tar -cvf backup.tar ./attachments'
+                docker exec jenk_bot sh -c 'tar -rvf backup.tar dump.sql'
+                docker exec jenk_bot sh -c 'gzip backup.tar'
+                docker exec jenk_bot sh -c 'rm dump.sql'
+                docker cp backup.tar.gz c:/users/valer/.jenkins/workspace/api_lab2/storage/backup
+                docker exec bot sh -c 'rm backup.tar.gz'
+                '''
+		echo " ==============back-up created succesfully=================="
+            }
+        }
+}
 	post {
             success {
 		echo '===============run docker==================='

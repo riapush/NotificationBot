@@ -13,4 +13,5 @@ COPY .env ./.env
 RUN mkdir -p ./storage/temp
 RUN mkdir -p ./storage/backup
 
+CMD [ "python", "models.py" ]
 CMD [ "python", "main.py" ]

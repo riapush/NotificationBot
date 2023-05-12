@@ -53,12 +53,10 @@ pipeline {
                     if (isUnix()) {
                         sh 'docker build -t NotificationBot .'
                         sh 'docker run --name jenk_bot -d --rm NotificationBot'
-                        \\ sh 'docker exec -d jenk_bot bash -c "python backup.py"'
                     } else {
                         bat 'docker build -t NotificationBot .'
                         bat 'docker run --name jenk_bot -d --rm NotificationBot'
                         bat 'If Not Exist storage/dump.sql powershell New-Item storage/dump.sql'
-                        \\ bat 'docker exec -d jenk_bot bash -c "python backup.py"'
                     }
                 }
         }

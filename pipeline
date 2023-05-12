@@ -50,7 +50,7 @@ pipeline {
 		echo '===============got variables succesfully==================='
             }
         }
-stage("back-up") {
+	stage("Making back-up") {
             steps {
                 echo " ==============creating back-up=================="
                 sh '''
@@ -59,7 +59,7 @@ stage("back-up") {
                 docker exec jenk_bot sh -c 'tar -rvf backup.tar dump.sql'
                 docker exec jenk_bot sh -c 'gzip backup.tar'
                 docker exec jenk_bot sh -c 'rm dump.sql'
-                docker cp backup.tar.gz c:/users/valer/.jenkins/workspace/api_lab2/storage/backup
+                docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz
                 docker exec bot sh -c 'rm backup.tar.gz'
                 '''
 		echo " ==============back-up created succesfully=================="

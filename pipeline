@@ -92,4 +92,3 @@ pipeline {
 		echo '===============docker container is running successfully==================='
             }
     }
-}

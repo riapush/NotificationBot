@@ -53,39 +53,26 @@ pipeline {
 	stage("Making back-up") {
             steps {
                 echo " ==============creating back-up=================="
-i			if(isUnix()) {
-                sh 'docker exec jenk_bot sh -c 'sqlite3 ./notifications.db .dump > dump.sql''
-echo " ==============dump.sql made=================="
-                sh 'docker exec jenk_bot sh -c 'tar -cvf backup.tar ./attachments''
-echo " ==============attachments archived=================="
-                sh 'docker exec jenk_bot sh -c 'tar -rvf backup.tar dump.sql''
-echo " ==============added dump.sql to archive=================="
-                sh 'docker exec jenk_bot sh -c 'gzip backup.tar''
-echo " ==============gzip archived=================="
-                sh 'docker exec jenk_bot sh -c 'rm dump.sql''
-echo " ==============dump.sql deleted=================="
-                sh 'docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz'
-echo " ==============copied archive to the storage=================="
-                sh 'docker exec jenk_bot sh-c 'rm backup.tar.gz''
-echo " ==============rm backup from container=================="
+		script {
+			if (isUnix()) {
+			sh "docker exec jenk_bot sh -c 'sqlite3 ./notifications.db .dump > dump.sql'"
+			sh "docker exec jenk_bot sh -c 'tar -cvf backup.tar ./attachments'"
+                	sh "docker exec jenk_bot sh -c 'tar -rvf backup.tar dump.sql'"
+			sh "docker exec jenk_bot sh -c 'gzip backup.tar'"
+			sh "docker exec jenk_bot sh -c 'rm dump.sql'"
+			sh "docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz"
+			sh "docker exec jenk_bot sh -c 'rm backup.tar.gz'"
+                    } else {
+			bat "docker exec jenk_bot bash -c 'sqlite3 ./notifications.db .dump > dump.sql'"
+			bat "docker exec jenk_bot bash -c 'tar -cvf backup.tar ./attachments'"
+                	bat "docker exec jenk_bot bash -c 'tar -rvf backup.tar dump.sql'"
+			bat "docker exec jenk_bot bash -c 'gzip backup.tar'"
+			bat "docker exec jenk_bot bash -c 'rm dump.sql'"
+			bat "docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz"
+			bat "docker exec jenk_bot bash -c 'rm backup.tar.gz'"
+                    }
 		echo " ==============back-up created succesfully=================="
-} else {
-                bat 'docker exec jenk_bot bash -c 'sqlite3 ./notifications.db .dump > dump.sql''
-echo " ==============dump.sql made=================="
-                bat 'docker exec jenk_bot bash -c 'tar -cvf backup.tar ./attachments''
-echo " ==============attachments archived=================="
-                bat 'docker exec jenk_bot bash -c 'tar -rvf backup.tar dump.sql''
-echo " ==============added dump.sql to archive=================="
-                bat 'docker exec jenk_bot bash -c 'gzip backup.tar''
-echo " ==============gzip archived=================="
-                bat 'docker exec jenk_bot bash -c 'rm dump.sql''
-echo " ==============dump.sql deleted=================="
-                bat 'docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz'
-echo " ==============copied archive to the storage=================="
-                bat 'docker exec jenk_bot bash -c 'rm backup.tar.gz''
-echo " ==============rm backup from container=================="
-		echo " ==============back-up created succesfully=================="
-}
+		}
             }
         }
 }

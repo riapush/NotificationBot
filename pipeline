@@ -20,7 +20,7 @@ pipeline {
                 	bat "docker exec jenk_bot bash -c \"tar -rvf backup.tar dump.sql\""
 			bat "docker exec jenk_bot bash -c \"gzip backup.tar\""
 			bat "docker exec jenk_bot bash -c \"rm dump.sql\""
-			bat "docker cp jenk_bot:/backup.tar.gz jenk_bot:/storage/backup/backup.tar.gz"
+			bat "docker cp backup.tar.gz jenk_bot:/storage/backup/backup.tar.gz"
 			bat "docker exec jenk_bot bash -c \"rm backup.tar.gz\""
                     }
 		}

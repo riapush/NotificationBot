@@ -21,6 +21,8 @@ storage = MemoryStorage()
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=storage)
 Notification.create_table()
+if not os.path.isdir(f"attachments"):
+    os.makedirs(f"attachments")
 
 
 async def scheduler():

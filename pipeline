@@ -7,13 +7,13 @@ pipeline {
                 echo " ==============creating back-up=================="
 		script {
 			if (isUnix()) {
-			sh "docker exec jenk_bot sh -c 'sqlite3 ./notifications.db .dump > dump.sql'"
-			sh "docker exec jenk_bot sh -c 'tar -cvf backup.tar ./attachments'"
-                	sh "docker exec jenk_bot sh -c 'tar -rvf backup.tar dump.sql'"
-			sh "docker exec jenk_bot sh -c 'gzip backup.tar'"
-			sh "docker exec jenk_bot sh -c 'rm dump.sql'"
+			sh "docker exec jenk_bot sh -c \"sqlite3 ./notifications.db .dump > dump.sql\""
+			sh "docker exec jenk_bot sh -c \"tar -cvf backup.tar ./attachments\""
+                	sh "docker exec jenk_bot sh -c \"tar -rvf backup.tar dump.sql\""
+			sh "docker exec jenk_bot sh -c \"gzip backup.tar\""
+			sh "docker exec jenk_bot sh -c \"rm dump.sql\""
 			sh "docker cp ./backup.tar.gz ./storage/backup/backup.tar.gz"
-			sh "docker exec jenk_bot sh -c 'rm backup.tar.gz'"
+			sh "docker exec jenk_bot sh -c \"rm backup.tar.gz\""
                     } else {
 			bat "docker exec jenk_bot bash -c \"apt-get update && apt-get install -y sqlite3 && sqlite3 ./notifications.db .dump > dump.sql\""
 			bat "docker exec jenk_bot bash -c \"tar -cvf backup.tar ./attachments\""
